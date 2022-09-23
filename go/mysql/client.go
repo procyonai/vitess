@@ -80,36 +80,38 @@ func Connect(ctx context.Context, params *ConnParams) (*Conn, error) {
 	go func() {
 		defer close(status)
 		var err error
-		var conn net.Conn
+		conn := params.Conn
 
-		// Cap the Dial time with the context deadline, plus a
-		// few seconds. We want to reclaim resources quickly
-		// and not let this go routine stuck in Dial forever.
-		//
-		// We add a few seconds so we detect the context is
-		// Done() before timing out the Dial. That way we'll
-		// return the right error to the client (ctx.Err(), vs
-		// DialTimeout() error).
-		if deadline, ok := ctx.Deadline(); ok {
-			timeout := time.Until(deadline) + 5*time.Second
-			conn, err = net.DialTimeout(netProto, addr, timeout)
-		} else {
-			conn, err = net.Dial(netProto, addr)
-		}
-		if err != nil {
-			// If we get an error, the connection to a Unix socket
-			// should return a 2002, but for a TCP socket it
-			// should return a 2003.
-			if netProto == "tcp" {
-				status <- connectResult{
-					err: NewSQLError(CRConnHostError, SSUnknownSQLState, "net.Dial(%v) failed: %v", addr, err),
-				}
+		if conn == nil {
+			// Cap the Dial time with the context deadline, plus a
+			// few seconds. We want to reclaim resources quickly
+			// and not let this go routine stuck in Dial forever.
+			//
+			// We add a few seconds so we detect the context is
+			// Done() before timing out the Dial. That way we'll
+			// return the right error to the client (ctx.Err(), vs
+			// DialTimeout() error).
+			if deadline, ok := ctx.Deadline(); ok {
+				timeout := time.Until(deadline) + 5*time.Second
+				conn, err = net.DialTimeout(netProto, addr, timeout)
 			} else {
-				status <- connectResult{
-					err: NewSQLError(CRConnectionError, SSUnknownSQLState, "net.Dial(%v) to local server failed: %v", addr, err),
-				}
+				conn, err = net.Dial(netProto, addr)
 			}
-			return
+			if err != nil {
+				// If we get an error, the connection to a Unix socket
+				// should return a 2002, but for a TCP socket it
+				// should return a 2003.
+				if netProto == "tcp" {
+					status <- connectResult{
+						err: NewSQLError(CRConnHostError, SSUnknownSQLState, "net.Dial(%v) failed: %v", addr, err),
+					}
+				} else {
+					status <- connectResult{
+						err: NewSQLError(CRConnectionError, SSUnknownSQLState, "net.Dial(%v) to local server failed: %v", addr, err),
+					}
+				}
+				return
+			}
 		}
 
 		// Send the connection back, so the other side can close it.

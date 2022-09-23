@@ -16,6 +16,8 @@ limitations under the License.
 
 package mysql
 
+import "net"
+
 // ConnParams contains all the parameters to use to connect to mysql.
 type ConnParams struct {
 	Host       string `json:"host"`
@@ -44,6 +46,8 @@ type ConnParams struct {
 	// The following is only set to force the client to connect without
 	// using CapabilityClientDeprecateEOF
 	DisableClientDeprecateEOF bool
+
+	Conn net.Conn
 }
 
 // EnableSSL will set the right flag on the parameters.
