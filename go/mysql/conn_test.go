@@ -310,7 +310,7 @@ func TestBasicPackets(t *testing.T) {
 	assert.EqualValues(78, packetOk.warnings)
 
 	// Write error packet, read it, compare.
-	err = sConn.writeErrorPacket(ERAccessDeniedError, SSAccessDeniedError, "access denied: %v", "reason")
+	err = sConn.WriteErrorPacket(ERAccessDeniedError, SSAccessDeniedError, "access denied: %v", "reason")
 	require.NoError(err)
 	data, err = cConn.ReadPacket()
 	require.NoError(err)
@@ -321,7 +321,7 @@ func TestBasicPackets(t *testing.T) {
 	utils.MustMatch(t, err, NewSQLError(ERAccessDeniedError, SSAccessDeniedError, "access denied: reason"), "")
 
 	// Write error packet from error, read it, compare.
-	err = sConn.writeErrorPacketFromError(NewSQLError(ERAccessDeniedError, SSAccessDeniedError, "access denied"))
+	err = sConn.WriteErrorPacketFromError(NewSQLError(ERAccessDeniedError, SSAccessDeniedError, "access denied"))
 	require.NoError(err)
 
 	data, err = cConn.ReadPacket()

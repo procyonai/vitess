@@ -369,7 +369,7 @@ func (l *Listener) handle(conn net.Conn, connectionID uint32, acceptTime time.Ti
 		}
 	} else {
 		if l.RequireSecureTransport {
-			c.writeErrorPacketFromError(vterrors.Errorf(vtrpc.Code_UNAVAILABLE, "server does not allow insecure connections, client must use SSL/TLS"))
+			c.WriteErrorPacketFromError(vterrors.Errorf(vtrpc.Code_UNAVAILABLE, "server does not allow insecure connections, client must use SSL/TLS"))
 		}
 		connCountByTLSVer.Add(versionNoTLS, 1)
 		defer connCountByTLSVer.Add(versionNoTLS, -1)
@@ -378,7 +378,7 @@ func (l *Listener) handle(conn net.Conn, connectionID uint32, acceptTime time.Ti
 	// See what auth method the AuthServer wants to use for that user.
 	authServerMethod, err := l.authServer.AuthMethod(user)
 	if err != nil {
-		c.writeErrorPacketFromError(err)
+		c.WriteErrorPacketFromError(err)
 		return
 	}
 
@@ -391,7 +391,7 @@ func (l *Listener) handle(conn net.Conn, connectionID uint32, acceptTime time.Ti
 		userData, err := l.authServer.ValidateHash(salt, user, authResponse, conn.RemoteAddr())
 		if err != nil {
 			log.Warningf("Error authenticating user using MySQL native password: %v", err)
-			c.writeErrorPacketFromError(err)
+			c.WriteErrorPacketFromError(err)
 			return
 		}
 		c.User = user
@@ -422,7 +422,7 @@ func (l *Listener) handle(conn net.Conn, connectionID uint32, acceptTime time.Ti
 		userData, err := l.authServer.ValidateHash(salt, user, response, conn.RemoteAddr())
 		if err != nil {
 			log.Warningf("Error authenticating user using MySQL native password: %v", err)
-			c.writeErrorPacketFromError(err)
+			c.WriteErrorPacketFromError(err)
 			return
 		}
 		c.User = user
@@ -433,7 +433,7 @@ func (l *Listener) handle(conn net.Conn, connectionID uint32, acceptTime time.Ti
 
 		// The negotiation happens in clear text. Let's check we can.
 		if !l.AllowClearTextWithoutTLS.Get() && c.Capabilities&CapabilityClientSSL == 0 {
-			c.writeErrorPacket(CRServerHandshakeErr, SSUnknownSQLState, "Cannot use clear text authentication over non-SSL connections.")
+			c.WriteErrorPacket(CRServerHandshakeErr, SSUnknownSQLState, "Cannot use clear text authentication over non-SSL connections.")
 			return
 		}
 
@@ -452,7 +452,7 @@ func (l *Listener) handle(conn net.Conn, connectionID uint32, acceptTime time.Ti
 		// auth server.
 		userData, err := l.authServer.Negotiate(c, user, conn.RemoteAddr())
 		if err != nil {
-			c.writeErrorPacketFromError(err)
+			c.WriteErrorPacketFromError(err)
 			return
 		}
 		c.User = user
@@ -470,7 +470,7 @@ func (l *Listener) handle(conn net.Conn, connectionID uint32, acceptTime time.Ti
 			return nil
 		})
 		if err != nil {
-			c.writeErrorPacketFromError(err)
+			c.WriteErrorPacketFromError(err)
 			return
 		}
 	}

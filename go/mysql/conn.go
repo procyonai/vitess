@@ -788,7 +788,7 @@ func getLenEncInt(i uint64) []byte {
 }
 
 func (c *Conn) writeErrorAndLog(errorCode uint16, sqlState string, format string, args ...interface{}) bool {
-	if err := c.writeErrorPacket(errorCode, sqlState, format, args...); err != nil {
+	if err := c.WriteErrorPacket(errorCode, sqlState, format, args...); err != nil {
 		log.Errorf("Error writing error to %s: %v", c, err)
 		return false
 	}
@@ -796,7 +796,7 @@ func (c *Conn) writeErrorAndLog(errorCode uint16, sqlState string, format string
 }
 
 func (c *Conn) writeErrorPacketFromErrorAndLog(err error) bool {
-	werr := c.writeErrorPacketFromError(err)
+	werr := c.WriteErrorPacketFromError(err)
 	if werr != nil {
 		log.Errorf("Error writing error to %s: %v", c, werr)
 		return false
@@ -804,10 +804,10 @@ func (c *Conn) writeErrorPacketFromErrorAndLog(err error) bool {
 	return true
 }
 
-// writeErrorPacket writes an error packet.
+// WriteErrorPacket writes an error packet.
 // Server -> Client.
 // This method returns a generic error, not a SQLError.
-func (c *Conn) writeErrorPacket(errorCode uint16, sqlState string, format string, args ...interface{}) error {
+func (c *Conn) WriteErrorPacket(errorCode uint16, sqlState string, format string, args ...interface{}) error {
 	errorMessage := fmt.Sprintf(format, args...)
 	length := 1 + 2 + 1 + 5 + len(errorMessage)
 	data, pos := c.startEphemeralPacketWithHeader(length)
@@ -826,14 +826,14 @@ func (c *Conn) writeErrorPacket(errorCode uint16, sqlState string, format string
 	return c.writeEphemeralPacket()
 }
 
-// writeErrorPacketFromError writes an error packet, from a regular error.
-// See writeErrorPacket for other info.
-func (c *Conn) writeErrorPacketFromError(err error) error {
+// WriteErrorPacketFromError writes an error packet, from a regular error.
+// See WriteErrorPacket for other info.
+func (c *Conn) WriteErrorPacketFromError(err error) error {
 	if se, ok := err.(*SQLError); ok {
-		return c.writeErrorPacket(uint16(se.Num), se.State, "%v", se.Message)
+		return c.WriteErrorPacket(uint16(se.Num), se.State, "%v", se.Message)
 	}
 
-	return c.writeErrorPacket(ERUnknownError, SSUnknownSQLState, "unknown error: %v", err)
+	return c.WriteErrorPacket(ERUnknownError, SSUnknownSQLState, "unknown error: %v", err)
 }
 
 // writeEOFPacket writes an EOF packet, through the buffer, and
@@ -916,7 +916,7 @@ func (c *Conn) handleComResetConnection(handler Handler) {
 	c.PrepareData = make(map[uint32]*PrepareData)
 	err := c.writeOKPacket(&PacketOK{})
 	if err != nil {
-		c.writeErrorPacketFromError(err)
+		c.WriteErrorPacketFromError(err)
 	}
 }
 
