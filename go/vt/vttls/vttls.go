@@ -150,13 +150,13 @@ func loadx509CertPool(ca string) (*x509.CertPool, error) {
 }
 
 func doLoadx509CertPool(ca string) error {
-	b, err := ioutil.ReadFile(ca)
-	if err != nil {
-		return vterrors.Errorf(vtrpc.Code_NOT_FOUND, "failed to read ca file: %s", ca)
-	}
+	// b, err := ioutil.ReadFile(ca)
+	// if err != nil {
+	// 	return vterrors.Errorf(vtrpc.Code_NOT_FOUND, "failed to read ca file: %s", ca)
+	// }
 
 	cp := x509.NewCertPool()
-	if !cp.AppendCertsFromPEM(b) {
+	if !cp.AppendCertsFromPEM([]byte(ca)) {
 		return vterrors.Errorf(vtrpc.Code_UNKNOWN, "failed to append certificates")
 	}
 
